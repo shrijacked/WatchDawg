@@ -4,11 +4,12 @@ import time
 import os
 from datetime import datetime
 import numpy as np
+from send_mail import send_email  # Import send_email function from send_mail.py
 
-# Paths and constants
-THRESHOLD_SECONDS = 10
-MODEL_PATH = "../weights/yolov5s.pt"
-LOG_DIR = "../logs/"
+# Constants
+THRESHOLD_SECONDS = 10  # Time threshold for alert (in seconds)
+MODEL_PATH = "../weights/yolov5s.pt"  # Path to YOLOv5 model
+LOG_DIR = "../logs/"  # Directory for logs
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
@@ -16,18 +17,22 @@ if not os.path.exists(LOG_DIR):
 heatmap = None
 
 # Load YOLOv5 model
+print("[INFO] Loading YOLOv5 model...")
 model = torch.hub.load('ultralytics/yolov5', 'custom', path=MODEL_PATH, force_reload=True)
 
 def log_event(event):
+    """Log the event to a file with a timestamp."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_file_path = os.path.join(LOG_DIR, "events.log")
     with open(log_file_path, "a") as log_file:
         log_file.write(f"{timestamp} - {event}\n")
 
 def send_mac_notification(message):
+    """Send a macOS notification."""
     os.system(f"osascript -e 'display notification \"{message}\" with title \"Security Alert\"'")
 
 def update_heatmap(frame):
+    """Update the heatmap with new frame data."""
     global heatmap
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     if heatmap is None:
@@ -35,6 +40,7 @@ def update_heatmap(frame):
     heatmap += cv2.GaussianBlur(gray, (15, 15), 0)
 
 def display_heatmap():
+    """Display the heatmap in a separate window."""
     global heatmap
     if heatmap is not None:
         normalized_heatmap = cv2.normalize(heatmap, None, 0, 255, cv2.NORM_MINMAX)
@@ -42,18 +48,21 @@ def display_heatmap():
         cv2.imshow("Heatmap", heatmap_color)
 
 def detect_person(video_source):
+    """Detect persons in the video feed."""
     cap = cv2.VideoCapture(video_source)
     person_detected_time = None
     buzzer_triggered = False
 
     # ROI selection
+    print("[INFO] Select the Region of Interest (ROI)...")
     ret, frame = cap.read()
     if ret:
         roi = cv2.selectROI("Select ROI", frame, False, False)
         x, y, w, h = map(int, roi)
         cv2.destroyWindow("Select ROI")
+        print(f"[INFO] ROI selected: x={x}, y={y}, w={w}, h={h}")
     else:
-        print("Failed to capture frame for ROI selection.")
+        print("[ERROR] Failed to capture frame for ROI selection.")
         return
 
     while cap.isOpened():
@@ -80,6 +89,13 @@ def detect_person(video_source):
                         log_event("Trespasser detected in restricted area!")
                         buzzer_triggered = True
 
+                        # Send email notification
+                        send_email(
+                            subject="Security Alert: Trespasser Detected",
+                            body=f"A trespasser was detected at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.",
+                            attachment=None  # Optional: Add a video file path if required
+                        )
+
                 break
         else:
             person_detected_time = None
@@ -98,4 +114,5 @@ def detect_person(video_source):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    detect_person(0)  # Use webcam
+    print("[INFO] Starting person detection...")
+    detect_person(0)  # Use webcam (change to a file path for recorded videos)
