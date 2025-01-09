@@ -2,27 +2,32 @@ import os
 import argparse
 from utils.capture_video import capture_video
 from utils.detect_person import main as detect_person_main
-from utils.generate_report import generate_report
+from utils.generate_report import generate_report, generate_weekly_report
+
 
 def setup_environment():
     # Ensure required directories exist
-    required_dirs = ["../data", "../logs", "../weights", "../sounds"]
+    required_dirs = ["data", "logs", "weights", "sounds"]
     for directory in required_dirs:
         os.makedirs(directory, exist_ok=True)
 
 
 def main():
-    # Setup the environment
     setup_environment()
 
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Security System")
+    parser = argparse.ArgumentParser(description="Security System Application")
     parser.add_argument(
         "--action",
         type=str,
         required=True,
-        choices=["capture", "detect", "report"],
-        help="Action to perform: capture (record video), detect (detect intruders), or report (generate daily report)."
+        choices=["capture", "detect", "daily_report", "weekly_report"],
+        help=(
+            "Action to perform:\n"
+            "capture: Record a video\n"
+            "detect: Run person detection\n"
+            "daily_report: Generate daily activity report\n"
+            "weekly_report: Generate weekly summary report"
+        ),
     )
     args = parser.parse_args()
 
@@ -32,9 +37,13 @@ def main():
     elif args.action == "detect":
         print("Starting person detection...")
         detect_person_main()
-    elif args.action == "report":
+    elif args.action == "daily_report":
         print("Generating daily report...")
         generate_report()
+    elif args.action == "weekly_report":
+        print("Generating weekly summary...")
+        weekly_report = generate_weekly_report()
+        print(f"Weekly summary saved to {weekly_report}")
     else:
         print("Invalid action. Use --help for guidance.")
 
