@@ -1,9 +1,8 @@
 import os
 import argparse
-from capture_video import capture_video
-from detect_person import main as detect_person_main
-from generate_person import generate_report
-
+from utils.capture_video import capture_video
+from utils.detect_person import main as detect_person_main
+from utils.generate_report import generate_report
 
 def setup_environment():
     # Ensure required directories exist
