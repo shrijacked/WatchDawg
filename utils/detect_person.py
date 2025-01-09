@@ -90,7 +90,9 @@ def detect_person(video_source, model, threshold_seconds=THRESHOLD_SECONDS, log_
                 h: {h}
                 w: {w}           
                 """)
-            
+            cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (255, 0, 0), 2)
+            cv2.putText(frame, f"{label} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+
             if label == "person" and xmin >= x and ymin >= y and xmax <= x + w and ymax <= y + h:
                 cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (255, 0, 0), 2)
                 cv2.putText(frame, f"{label} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
