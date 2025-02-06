@@ -2,10 +2,11 @@ import cv2
 import os
 from datetime import datetime
 
-def setup_directories(data_dir="../data/"):
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
+
+def setup_directories(data_dir="data/"):
+    os.makedirs(data_dir, exist_ok=True)  # Simplified directory creation
     return data_dir
+
 
 def get_video_writer(data_dir, fourcc, fps=20.0, frame_size=(640, 480)):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -13,40 +14,43 @@ def get_video_writer(data_dir, fourcc, fps=20.0, frame_size=(640, 480)):
     out = cv2.VideoWriter(video_path, fourcc, fps, frame_size)
     return out, video_path
 
+
 def capture_video():
-    # Setup directories
     data_dir = setup_directories()
-
-    # Video capture settings
-    cap = cv2.VideoCapture(0)  # Use the first camera
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-
-    # Get video writer
+    cap = cv2.VideoCapture(0)
+    fourcc = cv2.VideoWriter_fourcc(*"XVID")
     out, video_path = get_video_writer(data_dir, fourcc)
 
     print(f"Recording video to {video_path}... Press 'q' to stop.")
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
+    try:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to capture video frame. Exiting...")
+                break
 
-        # Write the frame to the video file
-        out.write(frame)
+            out.write(frame)
+            cv2.imshow("Video Capture", frame)
 
-        # Display the frame (optional)
-        cv2.imshow("Video Capture", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):  # Stop on 'q' key press
+                print("\nVideo capture stopped by user.")
+                break
 
-        # Break the loop on 'q' key
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    except KeyboardInterrupt:
+        print("\n[INFO] Video capture interrupted. Cleaning up resources...")
 
-    # Release resources
-    cap.release()
-    out.release()
-    cv2.destroyAllWindows()
+    finally:
+        if cap.isOpened():
+            cap.release()
+        if out is not None:
+            out.release()
+        cv2.destroyAllWindows()
+        print(f"[INFO] Video saved to {video_path}")
 
-    print(f"Video saved to {video_path}")
 
 if __name__ == "__main__":
-    capture_video()
+    try:
+        capture_video()
+    except KeyboardInterrupt:
+        print("\n[INFO] Program terminated by user.")
